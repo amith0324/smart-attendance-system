@@ -17,79 +17,112 @@ st.set_page_config(
     layout="wide",
 )
 
-DARK_STYLE = """
-<style>
-    :root {
-        color-scheme: dark;
-    }
-    .main .block-container {
-        padding-top: 1rem;
-        padding-bottom: 2rem;
-    }
-    .stApp {
-        background: radial-gradient(circle at top left, rgba(56, 94, 191, 0.25), transparent 30%),
-                    radial-gradient(circle at bottom right, rgba(134, 52, 168, 0.18), transparent 30%),
-                    #0e1117;
-        color: #e3e9f9;
-    }
-    .css-18e3th9 {
-        background-color: transparent;
-    }
-    .css-1d391kg {
-        background: rgba(22, 28, 38, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.35);
-        border-radius: 18px;
-    }
-    .css-1v0mbdj, .css-10trblm {
-        background: rgba(255, 255, 255, 0.03);
-    }
-    .stButton>button {
-        background-color: #4169e1;
-        color: white;
-        border-radius: 12px;
-        padding: 0.8rem 1.2rem;
-        border: none;
-    }
-    .stButton>button:hover {
-        background-color: #3050c0;
-    }
-    .css-1aumxhk {
-        background-color: rgba(33, 39, 53, 0.95) !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    }
-    header, footer, [data-testid="collapsedControl"] {
-        visibility: hidden;
-    }
-    .css-1avcm0n {
-        padding-top: 0;
-    }
-    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #f7fbff;
-    }
-    .stMetricValue {
-        color: #f7fbff;
-    }
-</style>
-"""
+THEME_STYLES = {
+    "Dark": {
+        "background": "radial-gradient(circle at top left, rgba(56, 94, 191, 0.25), transparent 30%),"
+                      "radial-gradient(circle at bottom right, rgba(134, 52, 168, 0.18), transparent 30%), #0e1117",
+        "text_color": "#e3e9f9",
+        "card_bg": "rgba(22, 28, 38, 0.9)",
+        "card_border": "rgba(255, 255, 255, 0.08)",
+        "button_bg": "#4169e1",
+        "button_hover": "#3050c0",
+        "heading_color": "#f7fbff",
+    },
+    "Light": {
+        "background": "linear-gradient(145deg, #ffffff 0%, #dde4ff 100%)",
+        "text_color": "#111827",
+        "card_bg": "rgba(255, 255, 255, 0.92)",
+        "card_border": "rgba(98, 110, 234, 0.18)",
+        "button_bg": "#1f2937",
+        "button_hover": "#111827",
+        "heading_color": "#111827",
+    },
+    "Ocean": {
+        "background": "radial-gradient(circle at top left, rgba(30, 144, 255, 0.24), transparent 25%),"
+                      "radial-gradient(circle at bottom right, rgba(0, 128, 128, 0.18), transparent 25%), #071e3d",
+        "text_color": "#d7f3ff",
+        "card_bg": "rgba(7, 30, 61, 0.92)",
+        "card_border": "rgba(94, 165, 255, 0.16)",
+        "button_bg": "#1f78b4",
+        "button_hover": "#145a8a",
+        "heading_color": "#d7f3ff",
+    },
+}
 
 @st.cache_resource
 def load_recognizer():
     return FaceRecognizer()
 
 
-def inject_style():
-    st.markdown(DARK_STYLE, unsafe_allow_html=True)
+def get_theme_style(theme="Dark"):
+    values = THEME_STYLES.get(theme, THEME_STYLES["Dark"])
+    return f"""
+    <style>
+        :root {{
+            color-scheme: {'dark' if theme != 'Light' else 'light'};
+        }}
+        .main .block-container {{
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+        }}
+        .stApp {{
+            background: {values['background']};
+            color: {values['text_color']};
+        }}
+        .css-18e3th9 {{
+            background-color: transparent;
+        }}
+        .css-1d391kg {{
+            background: {values['card_bg']};
+            border: 1px solid {values['card_border']};
+            box-shadow: 0 16px 50px rgba(0, 0, 0, 0.18);
+            border-radius: 18px;
+        }}
+        .css-1v0mbdj, .css-10trblm {{
+            background: rgba(255, 255, 255, 0.06);
+        }}
+        .stButton>button {{
+            background-color: {values['button_bg']};
+            color: white;
+            border-radius: 12px;
+            padding: 0.8rem 1.2rem;
+            border: none;
+        }}
+        .stButton>button:hover {{
+            background-color: {values['button_hover']};
+        }}
+        .css-1aumxhk {{
+            background-color: rgba(33, 39, 53, 0.95) !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        }}
+        header, footer, [data-testid="collapsedControl"] {{
+            visibility: hidden;
+        }}
+        .css-1avcm0n {{
+            padding-top: 0;
+        }}
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {{
+            color: {values['heading_color']};
+        }}
+        .stMetricValue {{
+            color: {values['heading_color']};
+        }}
+    </style>
+    """
+
+
+def inject_style(theme="Dark"):
+    st.markdown(get_theme_style(theme), unsafe_allow_html=True)
 
 
 def render_header():
     st.markdown("### Smart Attendance Dashboard")
     st.markdown(
-        "##### A modern dark UI for real-time attendance, face recognition, and analytics."
+        "##### A modern real-time attendance dashboard with theme controls and analytics."
     )
 
 
-def render_dashboard():
+def render_dashboard(show_users=False, show_extended_stats=False):
     today = datetime.datetime.now().strftime("%Y-%m-%d")
     logs = get_attendance_logs(date=today)
     all_users = get_all_users()
@@ -112,6 +145,20 @@ def render_dashboard():
                 f"<p style='font-size:2rem;font-weight:700;margin:0;'>{absent_today}</p>"
                 "</div>"
                 "</div>", unsafe_allow_html=True)
+
+    if show_users and all_users:
+        st.markdown("### Registered Users")
+        user_list = [f"• {user[1]} (ID {user[0]})" for user in all_users]
+        st.markdown("<div style='padding:1rem;background:rgba(255,255,255,0.08);border-radius:16px;'>" + "<br>".join(user_list) + "</div>", unsafe_allow_html=True)
+
+    if show_extended_stats:
+        st.markdown("### Quick Stats")
+        st.markdown(
+            f"- Total face registrations: **{total_users}**<br>"
+            f"- Unique attendees today: **{present_today}**<br>"
+            f"- Remaining absentees: **{absent_today}**",
+            unsafe_allow_html=True,
+        )
 
     if all_users:
         st.markdown("### Manage registered users")
@@ -234,15 +281,26 @@ def main():
         print("Run this app with: python -m streamlit run app.py --server.port 8502 --server.address 127.0.0.1")
         sys.exit(1)
 
-    inject_style()
+    theme_choice = st.sidebar.selectbox("Interface Theme", ["Dark", "Light", "Ocean"], index=0)
+    inject_style(theme_choice)
 
     st.sidebar.title("Navigation")
     st.sidebar.markdown("Choose a section to manage attendance and users.")
     choice = st.sidebar.radio("Go to", ["Dashboard", "Register User"], index=0)
+    st.sidebar.divider()
+    st.sidebar.markdown("### Controls")
+    if st.sidebar.button("🔄 Refresh dashboard"):
+        if hasattr(st, 'rerun'):
+            st.rerun()
+        elif hasattr(st, 'experimental_rerun'):
+            st.experimental_rerun()
+
+    show_users = st.sidebar.checkbox("Show registered users", value=False)
+    show_extended_stats = st.sidebar.checkbox("Show quick stats", value=False)
 
     if choice == "Dashboard":
         render_header()
-        render_dashboard()
+        render_dashboard(show_users=show_users, show_extended_stats=show_extended_stats)
     else:
         render_add_user()
 
