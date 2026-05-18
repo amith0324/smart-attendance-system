@@ -42,6 +42,7 @@ def main():
 
     frame_count = 0
     process_every_n_frames = 2 # Process every 2nd frame for speed (Frame skipping)
+    last_event_message = None
     
     while True:
         ret, frame = cap.read()
@@ -82,6 +83,7 @@ def main():
             color = COLOR_RED
             
             # Check if we already recognized this track
+            status_text = None
             if track_id in processed_track_ids:
                 user_name = processed_track_ids[track_id]
                 if user_name != "Unknown":
@@ -105,14 +107,34 @@ def main():
                         # Mark Attendance
                         success = mark_attendance(user_id)
                         if success:
-                            msg = f"Attendance marked for {user_name}."
-                            print(msg)
-                            send_email_alert("Attendance Marked", msg)
-                            # send_sms_alert(msg) # Uncomment to use SMS
+                            status_text = f"Attendance marked for {user_name}."
+                            last_event_message = status_text
+                            print(status_text)
+                            print(f"[Last event] {last_event_message}")
+                            send_email_alert("Attendance Marked", status_text)
+                            # send_sms_alert(status_text) # Uncomment to use SMS
+                        else:
+                            status_text = f"Attendance already marked for {user_name} today."
+                            last_event_message = status_text
+                            print(status_text)
+                            print(f"[Last event] {last_event_message}")
                     else:
                         # Unknown User
                         processed_track_ids[track_id] = "Unknown"
                         unknown_track_counts[track_id] = unknown_track_counts.get(track_id, 0) + 1
+
+            # Show feedback on the frame if available
+            if status_text:
+                cv2.putText(
+                    frame,
+                    status_text,
+                    (20, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    COLOR_BLUE,
+                    2,
+                    cv2.LINE_AA,
+                )
                         
             # Alert for persistent unknown user
             if processed_track_ids.get(track_id) == "Unknown":

@@ -1,12 +1,10 @@
-# Smart Attendance System 🎯
 
-## 📌 Overview
 
 This project is a real-time smart attendance system using face recognition and tracking. It detects faces, recognizes individuals, and records attendance automatically.
 
 ---
 
-## 🚀 Features
+
 
 * Face Detection using YOLOv8
 * Face Recognition using FaceNet
@@ -17,7 +15,7 @@ This project is a real-time smart attendance system using face recognition and t
 
 ---
 
-## 🛠 Tech Stack
+
 
 * Python
 * OpenCV
@@ -37,7 +35,7 @@ python main.py
 
 ---
 
-## 📊 Output
+
 
 * Real-time face detection
 * Attendance logging
@@ -45,6 +43,5 @@ python main.py
 
 ---
 
-## 👨‍💻 Author
 
 Amith A

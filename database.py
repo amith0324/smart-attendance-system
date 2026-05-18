@@ -73,6 +73,16 @@ def get_all_users():
     conn.close()
     return users
 
+def delete_user(user_id):
+    """Deletes a user and their attendance records from the database."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM Attendance WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM Users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+
+
 def mark_attendance(user_id):
     """
     Marks attendance for a user if they haven't been marked today.
