@@ -43,14 +43,20 @@ class FaceRecognizer:
         """
         if embedding is None or not known_users:
             return None, "Unknown", 0.0
-            
+        
+        # Normalize embedding for better distance calculations
+        embedding = embedding / np.linalg.norm(embedding)
+        
         best_match_id = None
         best_match_name = "Unknown"
         best_distance = float("inf")
         
         for user_id, name, known_emb in known_users:
-            # L2 distance
-            dist = np.linalg.norm(embedding - known_emb)
+            # Normalize known embedding as well
+            normalized_known_emb = known_emb / np.linalg.norm(known_emb)
+            
+            # L2 distance on normalized embeddings
+            dist = np.linalg.norm(embedding - normalized_known_emb)
             
             if dist < best_distance:
                 best_distance = dist
@@ -59,7 +65,10 @@ class FaceRecognizer:
                 
         # threshold is maximum allowed distance (lower is closer)
         # 0.6 is typical, we use 0.55 to be slightly strict
+        # Convert distance to confidence score (1 - distance)
+        confidence = max(0, 1 - best_distance)
+        
         if best_distance <= threshold:
-            return best_match_id, best_match_name, (1 - best_distance)
+            return best_match_id, best_match_name, confidence
         else:
-            return None, "Unknown", (1 - best_distance)
+            return None, "Unknown", confidence

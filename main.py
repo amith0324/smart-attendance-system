@@ -63,7 +63,7 @@ def main():
             continue
             
         # 1. Detect Faces
-        detections = detector.detect(frame, conf_threshold=0.5)
+        detections = detector.detect(frame, conf_threshold=0.6)
         
         # 2. Track Faces
         tracks = tracker.update(detections, frame)
@@ -96,18 +96,23 @@ def main():
                 
                 if face_img is not None:
                     embedding = recognizer.get_embedding(face_img)
-                    user_id, user_name, conf = recognizer.match_face(embedding, known_users, threshold=0.7)
                     
-                    if user_id:
-                        # Known User
+                    # Use stricter threshold (0.6 instead of 0.55) to avoid false positives
+                    user_id, user_name, conf = recognizer.match_face(embedding, known_users, threshold=0.60)
+                    
+                    # Only mark attendance if confidence is high enough
+                    CONFIDENCE_THRESHOLD = 0.70
+                    
+                    if user_id and conf >= CONFIDENCE_THRESHOLD:
+                        # Known User - HIGH CONFIDENCE
                         processed_track_ids[track_id] = user_name
-                        label = f"{user_name}"
+                        label = f"{user_name} ({conf:.2f})"
                         color = COLOR_GREEN
                         
                         # Mark Attendance
                         success = mark_attendance(user_id)
                         if success:
-                            status_text = f"Attendance marked for {user_name}."
+                            status_text = f"✓ Attendance marked for {user_name} (Confidence: {conf:.2f})"
                             last_event_message = status_text
                             print(status_text)
                             print(f"[Last event] {last_event_message}")
@@ -119,8 +124,13 @@ def main():
                             print(status_text)
                             print(f"[Last event] {last_event_message}")
                     else:
-                        # Unknown User
+                        # Unknown User OR Low Confidence
                         processed_track_ids[track_id] = "Unknown"
+                        if conf > 0:
+                            label = f"Unknown (Conf: {conf:.2f})"
+                        else:
+                            label = "Unknown/Not Registered"
+                        color = COLOR_RED
                         unknown_track_counts[track_id] = unknown_track_counts.get(track_id, 0) + 1
 
             # Show feedback on the frame if available
@@ -135,12 +145,26 @@ def main():
                     2,
                     cv2.LINE_AA,
                 )
+            
+            # Show RED alert for unknown/unregistered people
+            if processed_track_ids.get(track_id) == "Unknown":
+                # Draw large RED box to indicate unregistered person
+                cv2.putText(
+                    frame,
+                    "NOT REGISTERED",
+                    (x1, max(20, y1 - 20)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.9,
+                    COLOR_RED,
+                    3,
+                    cv2.LINE_AA,
+                )
                         
             # Alert for persistent unknown user
             if processed_track_ids.get(track_id) == "Unknown":
                 unknown_track_counts[track_id] = unknown_track_counts.get(track_id, 0) + 1
                 if unknown_track_counts[track_id] == 10: # After ~10 frames of being unknown
-                    msg = "Alert: Unknown person detected at premises."
+                    msg = "Alert: Unknown/Unregistered person detected at premises."
                     print(msg)
                     send_email_alert("Security Alert: Unknown Person", msg)
                     
